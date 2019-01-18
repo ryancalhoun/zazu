@@ -8,8 +8,16 @@ require 'thread'
 require 'tmpdir'
 require 'uri'
 
+# Fetch tools and run them
+#
+# Example:
+# 
+#   zazu = Zazu.new 'my-script'
+#   zazu.fetch url: 'https://example.com/my_script.sh'
+#   zazu.run ['--environment', 'prod']
+#
 class Zazu
-  VERSION = '0.0.1'
+  VERSION = '0.0.2'
 
   class Error < Exception; end
   class DownloadError < Error; end
@@ -17,6 +25,11 @@ class Zazu
 
   attr_reader :name, :path
 
+  # Creates the Zazu instance. Create as many as you like.
+  #
+  # * +:name:+ - The name of the command
+  # * +:logger:+ - Default to STDERR, can be replaced with another, e.g. IO::NIL
+  # * +:level:+ - Log level for the logger
   def initialize(name, logger: Logger.new(STDERR), level: Logger::INFO)
     @name = name
     @path = File.join Dir.tmpdir, name + '-download'
@@ -24,6 +37,10 @@ class Zazu
     @logger.level = level
   end
 
+  # Download the tool, to the temp directory
+  # * +:url:+ - The URL to the tool--Optional, can specity the block instead
+  # * +:age:+ - Seconds old the downloaded copy can be before downloading again--Default is 3600
+  # * +:block:+ - Receives the OS (:linux, :mac, :windows) and the machine arch (32 or 64)--Should return the URL
   def fetch(url: nil, age: 60*60, &block)
     return false if File.exists?(path) && Time.now - File.stat(path).mtime < age
 
@@ -33,6 +50,11 @@ class Zazu
     download_file url
   end
 
+  # Run the downloaded tool with arguments
+  # * +:args:+ - An array of args for the command
+  # * +:show:+ - A regexp of output (STDOUT and STDERR) to include
+  # * +:hide:+ - A regexp of output (STDOUT and STDERR) to exclude
+  # * +:block:+ - If given, receies each output line, otherwise output is logged
   def run(args = [], show: //, hide: /^$/, &block) 
     command = [path] + args
     @logger.debug "Running command #{command}".yellow
