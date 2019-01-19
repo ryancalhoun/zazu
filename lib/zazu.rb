@@ -17,7 +17,7 @@ require 'uri'
 #   zazu.run ['--environment', 'prod']
 #
 class Zazu
-  VERSION = '0.0.2'
+  VERSION = '0.0.3'
 
   class Error < Exception; end
   class DownloadError < Error; end
@@ -37,7 +37,8 @@ class Zazu
     @logger.level = level
   end
 
-  # Download the tool, to the temp directory
+  # Download the tool, to the temp directory. Raises a DownloadError on HTTP error.
+  #
   # * +:url:+ - The URL to the tool--Optional, can specity the block instead
   # * +:age:+ - Seconds old the downloaded copy can be before downloading again--Default is 3600
   # * +:block:+ - Receives the OS (:linux, :mac, :windows) and the machine arch (32 or 64)--Should return the URL
@@ -50,7 +51,9 @@ class Zazu
     download_file url
   end
 
-  # Run the downloaded tool with arguments
+  # Run the downloaded tool with arguments Raises a RunError if the command
+  # exits with nonzero.
+  #
   # * +:args:+ - An array of args for the command
   # * +:show:+ - A regexp of output (STDOUT and STDERR) to include
   # * +:hide:+ - A regexp of output (STDOUT and STDERR) to exclude
